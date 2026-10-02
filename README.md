@@ -1,6 +1,6 @@
 # RotiKita
 
-Prototipe Sistem Informasi Pre-Order Produk Kue dan Roti UMKM untuk Capstone Project STSI4440.
+Prototipe Sistem Informasi Pre-Order Produk Kue dan Roti UMKM untuk CapstoneProject STSI4440.
 
 ## Fitur versi awal
 
