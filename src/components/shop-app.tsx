@@ -1,0 +1,39 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Check, CheckCircle2, Clock3, Minus, Plus, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { formatRupiah, products, type Product } from "@/lib/mock-data";
+
+type Cart = Record<number, number>;
+
+export function ShopApp() {
+  const [category, setCategory] = useState("Semua");
+  const [query, setQuery] = useState("");
+  const [cart, setCart] = useState<Cart>({});
+  const [cartOpen, setCartOpen] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const visible = products.filter((item) => (category === "Semua" || item.category === category) && item.name.toLowerCase().includes(query.toLowerCase()));
+  const lines = products.filter((item) => cart[item.id]).map((item) => ({ ...item, qty: cart[item.id] }));
+  const count = Object.values(cart).reduce((a, b) => a + b, 0);
+  const total = useMemo(() => lines.reduce((sum, item) => sum + item.price * item.qty, 0), [lines]);
+  const changeQty = (id: number, delta: number) => setCart((current) => { const next = Math.max(0, (current[id] || 0) + delta); const updated = { ...current, [id]: next }; if (!next) delete updated[id]; return updated; });
+  const submitOrder = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); setSuccess(true); };
+  const closeModal = () => { setCartOpen(false); if (success) { setSuccess(false); setCart({}); } };
+
+  return <>
+    <div className="topbar"><div className="shell"><span>Pre-order hari ini untuk produksi besok</span><span>Pengambilan pukul 10.00–18.00 WIB</span></div></div>
+    <nav className="nav"><div className="shell nav-inner"><Link className="brand" href="/"><span className="brand-mark">RK</span><span>RotiKita</span></Link><div className="nav-links"><a href="#produk">Produk</a><a href="#cara-pesan">Cara Pesan</a><Link href="/pesanan">Cek Pesanan</Link></div><div className="nav-actions"><Link className="icon-btn" href="/login" aria-label="Masuk"><UserRound size={19}/></Link><button className="icon-btn" aria-label="Buka keranjang" onClick={() => setCartOpen(true)}><ShoppingBag size={19}/>{count > 0 && <span className="cart-count">{count}</span>}</button><button className="pill-btn" onClick={() => document.getElementById("produk")?.scrollIntoView()}>Pesan sekarang</button></div></div></nav>
+    <main>
+      <section className="hero"><div className="shell hero-card"><div className="hero-copy"><span className="eyebrow"><Clock3 size={15}/> Dibuat sesuai pesanan</span><h1>Hangat, segar, dan dibuat <em>untukmu.</em></h1><p>Pilih kue dan roti favoritmu, tentukan tanggal pengambilan, lalu kami siapkan dalam kondisi paling segar.</p><div className="hero-cta"><button className="primary-btn" onClick={() => document.getElementById("produk")?.scrollIntoView()}>Lihat produk</button><Link className="secondary-btn" href="/pesanan">Lacak pesanan</Link></div><div className="hero-points"><span><CheckCircle2 size={17}/> Tanpa bahan pengawet</span><span><CheckCircle2 size={17}/> Produksi terbatas</span></div></div><div className="hero-visual"><div className="hero-note"><strong>Fresh from the oven</strong><span>Pesanan diproduksi sesuai jadwal pilihanmu.</span></div></div></div></section>
+      <section className="section" id="produk"><div className="shell"><div className="section-head"><div><h2>Pilihan hari ini</h2><p>Semua dibuat segar setelah pesanan dikonfirmasi.</p></div><label className="search-wrap"><Search size={18}/><input aria-label="Cari produk" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari roti atau kue..."/></label></div><div className="filters">{["Semua", "Roti", "Kue", "Pastry"].map((item) => <button key={item} className={`filter ${category === item ? "active" : ""}`} onClick={() => setCategory(item)}>{item}</button>)}</div><div className="product-grid">{visible.map((product) => <ProductCard key={product.id} product={product} add={() => changeQty(product.id, 1)}/>)}</div></div></section>
+      <section className="steps" id="cara-pesan"><div className="shell"><h2>Pre-order jadi lebih mudah</h2><p className="steps-intro">Empat langkah sederhana sampai pesanan siap dinikmati.</p><div className="step-grid">{[["01","Pilih produk","Tambahkan kue atau roti favorit ke keranjang."],["02","Atur jadwal","Pilih tanggal dan metode pengambilan pesanan."],["03","Bayar pesanan","Transfer uang muka atau pelunasan, lalu unggah bukti."],["04","Pantau status","Lihat perkembangan pesanan hingga siap diambil."]].map(([num,title,text]) => <article className="step-card" key={num}><span className="step-num">LANGKAH {num}</span><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+    </main>
+    <footer className="footer"><div className="shell"><Link className="brand" href="/"><span className="brand-mark">RK</span><span>RotiKita</span></Link><p>Prototipe Sistem Informasi Pre-Order UMKM · Capstone Project STSI4440</p></div></footer>
+    {cartOpen && <div className="overlay" role="dialog" aria-modal="true" aria-label="Keranjang pre-order"><div className="modal"><div className="modal-head"><h2>{success ? "Pesanan berhasil" : "Pre-order kamu"}</h2><button className="close-btn" onClick={closeModal} aria-label="Tutup"><X size={20}/></button></div>{success ? <div className="success"><div className="success-icon"><Check size={34}/></div><h2>Pesanan sudah diterima!</h2><p>Nomor pesananmu <strong>RK-261002-017</strong>. Admin akan memeriksa pembayaran dan memperbarui status pesanan.</p><Link className="primary-btn" href="/pesanan">Lihat status pesanan</Link></div> : <form className="modal-body" onSubmit={submitOrder}>{lines.length === 0 ? <div className="empty"><ShoppingBag size={40} style={{margin:"0 auto 12px"}}/><p>Keranjangmu masih kosong.</p></div> : <>{lines.map((item) => <div className="cart-line" key={item.id}><div><h4>{item.name}</h4><span>{formatRupiah(item.price)}</span></div><div className="qty"><button type="button" onClick={() => changeQty(item.id,-1)}><Minus size={15}/></button><strong>{item.qty}</strong><button type="button" onClick={() => changeQty(item.id,1)}><Plus size={15}/></button></div><strong>{formatRupiah(item.price*item.qty)}</strong></div>)}<div className="total"><span>Total pesanan</span><span>{formatRupiah(total)}</span></div><div className="form-grid"><div className="field"><label>Nama pelanggan</label><input required placeholder="Nama lengkap"/></div><div className="field"><label>Nomor WhatsApp</label><input required type="tel" placeholder="08xxxxxxxxxx"/></div><div className="field"><label>Tanggal pengambilan</label><input required type="date"/></div><div className="field"><label>Metode penerimaan</label><select><option>Ambil di toko</option><option>Diantar kurir</option></select></div><div className="field full"><label>Alamat/catatan pesanan</label><textarea placeholder="Isi alamat jika memilih pengiriman atau tuliskan catatan tambahan"/></div><div className="field full"><label>Bukti pembayaran</label><input required type="file" accept="image/*,.pdf"/></div></div><div className="submit-row"><button className="primary-btn" type="submit">Kirim pre-order</button></div></>}</form>}</div></div>}
+  </>;
+}
+
+function ProductCard({ product, add }: { product: Product; add: () => void }) {
+  return <article className="product-card"><img className="product-image" src={product.image} alt={product.name}/><div className="product-body"><div className="product-meta"><span className="tag">{product.category}</span><span className="stock">Kuota {product.stock}</span></div><h3>{product.name}</h3><p>{product.description}</p><div className="product-bottom"><span className="price">{formatRupiah(product.price)}</span><button className="add-btn" onClick={add} aria-label={`Tambah ${product.name}`}><Plus size={19}/></button></div></div></article>;
+}
